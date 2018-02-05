@@ -1,8 +1,9 @@
 #include "exowebengineproperties.h"
+#include <QGuiApplication>
 
-ExoWebEngineProperties::ExoWebEngineProperties(QObject *parent) : QObject(parent)
+ExoWebEngineProperties::ExoWebEngineProperties(QGuiApplication *application, QObject *parent) : QObject(parent)
 {
-
+    m_application = application;
 }
 
 void ExoWebEngineProperties::setUrl(const QString &a)
@@ -29,4 +30,9 @@ void ExoWebEngineProperties::setTitle(const QString &a)
 QString ExoWebEngineProperties::title() const
 {
     return m_title;
+}
+
+void ExoWebEngineProperties::exonicTerminate()
+{
+    m_application->exit();
 }
