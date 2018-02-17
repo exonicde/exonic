@@ -35,12 +35,16 @@ int main(int argc, char *argv[])
                                       app.translate("main", "manager-port"), "9090");
     QCommandLineOption pidLocation("pid-location", app.translate("main", "Application PID path <path>., default is current directory."),
                                       app.translate("main", "pid-location"), ".");
+    QCommandLineOption  disableSeccompFilterSandbox("disable-seccomp-filter-sandbox", app.translate("main", "QWebEngine param."));
+    QCommandLineOption disableVirtualKeyboard("disable-virtual-keyboard", app.translate("main", "Disable virtual keyboard flag."));
     parser.addOption(urlOption);
     parser.addOption(appNameOption);
     parser.addOption(loadFromFile);
     parser.addOption(appManagerHost);
     parser.addOption(appManagerPort);
     parser.addOption(pidLocation);
+    parser.addOption(disableSeccompFilterSandbox);
+    parser.addOption(disableVirtualKeyboard);
     parser.process(app);
 
     qInfo() << app.arguments();
@@ -60,14 +64,14 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    QFile file(parser.value(pidLocation) + QString("/") + QString::number(app.applicationPid()));
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        qWarning() << "Could not write pid file";
-    else {
-        QTextStream out(&file);
-        out << app.applicationPid();
-    }
-    file.close();
+//    QFile file(parser.value(pidLocation) + QString("/") + QString::number(app.applicationPid()));
+//    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+//        qWarning() << "Could not write pid file";
+//    else {
+//        QTextStream out(&file);
+//        out << app.applicationPid();
+//    }
+//    file.close();
 
     ExoWebEngineProperties appProperties(&app);
     if (parser.isSet(loadFromFile))
@@ -77,6 +81,9 @@ int main(int argc, char *argv[])
 
     appProperties.setTitle(parser.value(appNameOption));
 
+    if (parser.isSet(disableVirtualKeyboard))
+        appProperties.setVirtualKeyboard(false);
+
     QtWebEngine::initialize();
 
     QQmlApplicationEngine engine;
@@ -85,7 +92,7 @@ int main(int argc, char *argv[])
 
     QRect geometry = QGuiApplication::primaryScreen()->availableGeometry();
     if (!QGuiApplication::styleHints()->showIsFullScreen()) {
-        const QSize size = geometry.size() * 4 / 5;
+        const QSize size = geometry.size() * 3 / 5;
         const QSize offset = (geometry.size() - size) / 2;
         const QPoint pos = geometry.topLeft() + QPoint(offset.width(), offset.height());
         geometry = QRect(pos, size);
