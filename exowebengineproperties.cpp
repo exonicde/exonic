@@ -5,12 +5,22 @@
 #include <QProcess>
 #include <QDebug>
 
+static ExoWebEngineProperties *pAppProperties;
 
 ExoWebEngineProperties::ExoWebEngineProperties(QGuiApplication *application, QObject *parent) : QObject(parent)
 {
+    pAppProperties = this;
     m_application = application;
     m_lastProcessId = -1;
     m_vitualKeyboard = true;
+    m_signalHandlersStarted = 0;
+    signal(SIGTERM, &(ExoWebEngineProperties::onSigTerm));
+    signal(SIGINT, &(ExoWebEngineProperties::onSigTerm));
+    signal(SIGQUIT, &(ExoWebEngineProperties::onSigTerm));
+    signal(SIGHUP, &(ExoWebEngineProperties::onSigTerm));
+    signal(SIGUSR1, &(ExoWebEngineProperties::onSigTerm));
+    signal(SIGUSR2, &(ExoWebEngineProperties::onSigTerm));
+    signal(SIGSTOP, &(ExoWebEngineProperties::onSigTerm));
 }
 
 void ExoWebEngineProperties::setUrl(const QString &a)
@@ -105,9 +115,38 @@ QProcess::ProcessState ExoWebEngineProperties::processState(int processId)
     return m_processes.contains(processId) ? m_processes[processId]->state() : QProcess::NotRunning;
 }
 
-void ExoWebEngineProperties::log(const QString &text)
+void ExoWebEngineProperties::signalHandled()
 {
-    qInfo() << text;
+    --m_signalHandlersStarted;
+    checkSignalsHandlersState();
+}
+
+void ExoWebEngineProperties::sendSignal(int sig)
+{
+    ++m_signalHandlersStarted;
+    switch (sig) {
+    case SIGTERM:
+        emit sigterm();
+        break;
+    case SIGINT:
+        emit sigint();
+        break;
+    case SIGQUIT:
+        emit sigquit();
+        break;
+    case SIGHUP:
+        emit sighup();
+        break;
+    case SIGUSR1:
+        emit sigusr1();
+        break;
+    case SIGUSR2:
+        emit sigusr2();
+        break;
+    case SIGSTOP:
+        emit sigstop();
+        break;
+    }
 }
 
 void ExoWebEngineProperties::processIsDone(int processId, QJSValue &args)
@@ -129,4 +168,16 @@ void ExoWebEngineProperties::processIsFailed(int processId, QJSValue &args)
     disconnect(exoProcess, SIGNAL(fail(int,QJSValue&)), this, SLOT(processIsFailed(int,QJSValue&)));
     m_processes.remove(processId);
     emit processReject(args);
+}
+
+void ExoWebEngineProperties::onSigTerm(int sig)
+{
+    qInfo() << "Terminate signal catched" << sig;
+    pAppProperties->sendSignal(sig);
+}
+
+void ExoWebEngineProperties::checkSignalsHandlersState()
+{
+    if (m_signalHandlersStarted < 1)
+        m_application->exit(0);
 }

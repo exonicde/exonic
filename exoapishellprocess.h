@@ -11,7 +11,7 @@ class ExoApiShellProcess : public QObject {
 
 public:
     explicit ExoApiShellProcess(const QString &command, QObject *parent = nullptr, bool returnStdOut = false, bool returnStdErr = false);
-    virtual ~ExoApiShellProcess();
+    ~ExoApiShellProcess();
 
     int id() const;
     QProcess::ProcessState state() const;

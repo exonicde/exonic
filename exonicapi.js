@@ -1,6 +1,63 @@
 (function () {
     'use strict';
 
+    class UnixSignalsHandlers {
+        constructor(api) {
+            this._handlers = {
+                term: [],
+                int: [],
+                quit: [],
+                hup: [],
+                usr1: [],
+                usr2: [],
+                stop: []
+            };
+            for (let sig in this._handlers) {
+                if (!this._handlers.hasOwnProperty(sig) || !api[`sig${sig}`]) continue;
+                api[`sig${sig}`].connect(this._handle.bind(this, sig));
+            }
+            this._api = api;
+        }
+
+        addHandler(type, handler) {
+            let handlers = this._handlers[type];
+            if (handlers.indexOf(handler) === -1)
+                handlers.push(handler);
+        }
+
+        removeHandler(type, handler) {
+            let handlers = this._handlers[type];
+            let index = handlers.indexOf(handler);
+            if (index !== -1)
+                handlers.splice(index, 1);
+        }
+
+        containsHandler(type, handler) {
+            return this._handlers[type].indexOf(handler) !== -1;
+        }
+
+        availableSignals() {
+            let signals = [];
+            for (let sig in this._handlers) {
+                if (!this._handlers.hasOwnProperty(sig)) continue;
+                signals.push(`sig${sig}`);
+            }
+
+            return signals;
+        }
+
+        async _handle(type) {
+            let handlers = this._handlers[type];
+            for (let i = 0; i < handlers.length; ++i) {
+                try {
+                    await handlers[i]();
+                }
+                catch (e) {}
+            }
+            this._api.signalHandled();
+        }
+    }
+
     new QWebChannel(qt.webChannelTransport, function (channel) {
         function debugLog(text, erase = false) {
             let out = document.getElementById('output');
@@ -46,7 +103,8 @@
                     };
                 });
             },
-            terminateApplication: channel.objects.exonicAPI.terminateApplication
+            terminateApplication: channel.objects.exonicAPI.terminateApplication,
+            signals: new UnixSignalsHandlers(channel.objects.exonicAPI)
         };
     });
 })();

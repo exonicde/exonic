@@ -1,6 +1,7 @@
 #ifndef EXOWEBENGINEPROPERTIES_H
 #define EXOWEBENGINEPROPERTIES_H
 
+#include <csignal>
 #include <QObject>
 #include <QHash>
 #include <QJSValue>
@@ -32,7 +33,8 @@ public:
     Q_INVOKABLE void terminateProcess(int processId);
     Q_INVOKABLE void killProcess(int processId);
     Q_INVOKABLE QProcess::ProcessState processState(int processId);
-    Q_INVOKABLE void log(const QString &text);
+    Q_INVOKABLE void signalHandled();
+    void sendSignal(int sig);
 
 signals:
     void urlChanged();
@@ -40,6 +42,13 @@ signals:
     void virtualKeyboardChanged();
     void processResolve(QJSValue result);
     void processReject(QJSValue error);
+    void sigterm();
+    void sigint();
+    void sigquit();
+    void sighup();
+    void sigusr1();
+    void sigusr2();
+    void sigstop();
 
 public slots:
     void processIsDone(int processId, QJSValue &args);
@@ -52,6 +61,10 @@ private:
     QGuiApplication *m_application;
     QHash<int, ExoApiShellProcess *> m_processes;
     int m_lastProcessId;
+    unsigned char m_signalHandlersStarted;
+
+    static void onSigTerm(int sig);
+    void checkSignalsHandlersState();
 };
 
 #endif // EXOWEBENGINEPROPERTIES_H

@@ -23,6 +23,27 @@ ApplicationWindow {
         onProcessReject: {
             exonicAPI.processRejected(error)
         }
+        onSigterm: {
+            exonicAPI.sigterm()
+        }
+        onSigint: {
+            exonicAPI.sigint()
+        }
+        onSigquit: {
+            exonicAPI.sigquit()
+        }
+        onSighup: {
+            exonicAPI.sighup()
+        }
+        onSigusr1: {
+            exonicAPI.sigusr1()
+        }
+        onSigusr2: {
+            exonicAPI.sigusr2()
+        }
+        onSigstop: {
+            exonicAPI.sigstop()
+        }
     }
 
     QtObject {
@@ -53,8 +74,19 @@ ApplicationWindow {
             return appProperties.processState(processId);
         }
 
+        function signalHandled() {
+            appProperties.signalHandled();
+        }
+
         signal processResolved(variant object)
         signal processRejected(variant object)
+        signal sigterm()
+        signal sigint()
+        signal sigquit()
+        signal sighup()
+        signal sigusr1()
+        signal sigusr2()
+        signal sigstop()
     }
 
     WebEngineView {
