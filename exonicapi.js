@@ -103,7 +103,8 @@
                 });
             },
             terminateApplication: channel.objects.exonicAPI.terminateApplication,
-            signals: new UnixSignalsHandlers(channel.objects.exonicAPI)
+            signals: new UnixSignalsHandlers(channel.objects.exonicAPI),
+            setTitle: channel.objects.exonicAPI.setTitle
         };
     }
 

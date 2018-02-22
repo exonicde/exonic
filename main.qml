@@ -75,6 +75,10 @@ ApplicationWindow {
             exonicCore.signalHandled();
         }
 
+        function setTitle(title) {
+            exonicCore.title = title;
+        }
+
         signal processResolved(variant object)
         signal processRejected(variant object)
         signal sigterm()
