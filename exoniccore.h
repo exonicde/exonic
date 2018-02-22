@@ -1,10 +1,10 @@
-#ifndef EXOWEBENGINEPROPERTIES_H
-#define EXOWEBENGINEPROPERTIES_H
+#ifndef EXONICCORE_H
+#define EXONICCORE_H
 
-#include <csignal>
 #include <QObject>
 #include <QHash>
 #include <QJSValue>
+#include <QSocketNotifier>
 
 #include "exoapishellprocess.h"
 
@@ -12,14 +12,14 @@
 class QGuiApplication;
 class QProcess;
 
-class ExoWebEngineProperties : public QObject
+class ExonicCore : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString url READ url WRITE setUrl NOTIFY urlChanged)
     Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged)
     Q_PROPERTY(bool virtualKeyboard READ virtualKeyboard WRITE setVirtualKeyboard NOTIFY virtualKeyboardChanged)
 public:
-    explicit ExoWebEngineProperties(QGuiApplication *application, QObject *parent = nullptr);
+    explicit ExonicCore(QGuiApplication *application, QObject *parent = nullptr);
 
     void setUrl(const QString &a);
     void setTitle(const QString &a);
@@ -36,6 +36,16 @@ public:
     Q_INVOKABLE void signalHandled();
     void sendSignal(int sig);
 
+    static void termSignalHandler(int unused);
+    static void intSignalHandler(int unused);
+    static void quitSignalHandler(int unused);
+    static void hupSignalHandler(int unused);
+    static void usr1SignalHandler(int unused);
+    static void usr2SignalHandler(int unused);
+
+    static int setUnixSignalHandlers();
+
+
 signals:
     void urlChanged();
     void titleChanged();
@@ -48,11 +58,16 @@ signals:
     void sighup();
     void sigusr1();
     void sigusr2();
-    void sigstop();
 
 public slots:
     void processIsDone(int processId, QJSValue &args);
     void processIsFailed(int processId, QJSValue &args);
+    void onSigTerm();
+    void onSigInt();
+    void onSigQuit();
+    void onSigHup();
+    void onSigUsr1();
+    void onSigUsr2();
 
 private:
     QString m_url;
@@ -62,9 +77,21 @@ private:
     QHash<int, ExoApiShellProcess *> m_processes;
     int m_lastProcessId;
     unsigned char m_signalHandlersStarted;
+    QSocketNotifier *m_termNotifier;
+    QSocketNotifier *m_intNotifier;
+    QSocketNotifier *m_quitNotifier;
+    QSocketNotifier *m_hupNotifier;
+    QSocketNotifier *m_usr1Notifier;
+    QSocketNotifier *m_usr2Notifier;
 
-    static void onSigTerm(int sig);
+    static int m_sigtermFd[2];
+    static int m_sigintFd[2];
+    static int m_sigquitFd[2];
+    static int m_sighupFd[2];
+    static int m_sigusr1Fd[2];
+    static int m_sigusr2Fd[2];
+
     void checkSignalsHandlersState();
 };
 
-#endif // EXOWEBENGINEPROPERTIES_H
+#endif // EXONICCORE_H

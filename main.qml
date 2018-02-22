@@ -13,10 +13,10 @@ ApplicationWindow {
     y: initialY
     width: initialWidth
     height: initialHeight
-    title: appProperties.title
+    title: exonicCore.title
 
     Connections {
-        target: appProperties
+        target: exonicCore
         onProcessResolve: {
             exonicAPI.processResolved(result)
         }
@@ -41,9 +41,6 @@ ApplicationWindow {
         onSigusr2: {
             exonicAPI.sigusr2()
         }
-        onSigstop: {
-            exonicAPI.sigstop()
-        }
     }
 
     QtObject {
@@ -51,31 +48,31 @@ ApplicationWindow {
         WebChannel.id: "exonicAPI"
 
         function terminateApplication() {
-            appProperties.exonicTerminate();
+            exonicCore.exonicTerminate();
         }
 
         function shell(command, returnStdOut, returnStdErr) {
-            return appProperties.shell(command, returnStdOut, returnStdErr);
+            return exonicCore.shell(command, returnStdOut, returnStdErr);
         }
 
         function startProcess(processId) {
-            appProperties.startProcess(processId);
+            exonicCore.startProcess(processId);
         }
 
         function terminateProcess(processId) {
-            appProperties.terminateProcess(processId);
+            exonicCore.terminateProcess(processId);
         }
 
         function killProcess(processId) {
-            appProperties.killProcess(processId);
+            exonicCore.killProcess(processId);
         }
 
         function getProcessState(processId) {
-            return appProperties.processState(processId);
+            return exonicCore.processState(processId);
         }
 
         function signalHandled() {
-            appProperties.signalHandled();
+            exonicCore.signalHandled();
         }
 
         signal processResolved(variant object)
@@ -86,7 +83,6 @@ ApplicationWindow {
         signal sighup()
         signal sigusr1()
         signal sigusr2()
-        signal sigstop()
     }
 
     WebEngineView {
@@ -96,7 +92,7 @@ ApplicationWindow {
         anchors.top: parent.top
         anchors.right: parent.right
         anchors.bottom: inputPanel.top
-        url: appProperties.url
+        url: exonicCore.url
         webChannel: webChannel
         userScripts: [
             WebEngineScript {
@@ -106,7 +102,7 @@ ApplicationWindow {
                 sourceUrl: "qrc:///qtwebchannel/qwebchannel.js"
             },
             WebEngineScript {
-                injectionPoint: WebEngineScript.DocumentReady
+                injectionPoint: WebEngineScript.DocumentCreation
                 worldId: WebEngineScript.MainWorld
                 name: "ExonicAPI"
                 sourceUrl: "qrc:///exonicapi.js"
@@ -122,7 +118,7 @@ ApplicationWindow {
     InputPanel {
         id: inputPanel
         focus: false
-        y: Qt.inputMethod.visible && appProperties.virtualKeyboard ? parent.height - inputPanel.height : parent.height
+        y: Qt.inputMethod.visible && exonicCore.virtualKeyboard ? parent.height - inputPanel.height : parent.height
         anchors.left: parent.left
         anchors.right: parent.right
     }

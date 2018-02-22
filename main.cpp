@@ -1,3 +1,5 @@
+#include <csignal>
+
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QCommandLineParser>
@@ -10,7 +12,7 @@
 #include <QFile>
 #include <QTextStream>
 
-#include "exowebengineproperties.h"
+#include "exoniccore.h"
 
 
 int main(int argc, char *argv[])
@@ -73,22 +75,27 @@ int main(int argc, char *argv[])
 //    }
 //    file.close();
 
-    ExoWebEngineProperties appProperties(&app);
-    if (parser.isSet(loadFromFile))
-        appProperties.setUrl(QUrl::fromLocalFile(parser.value(urlOption)).toString());
-    else
-        appProperties.setUrl(parser.value(urlOption));
+    ExonicCore exonicCore(&app);
 
-    appProperties.setTitle(parser.value(appNameOption));
+    int code = ExonicCore::setUnixSignalHandlers();
+    if (code)
+        qWarning() << "Cannot use all unix signals" << code;
+
+    if (parser.isSet(loadFromFile))
+        exonicCore.setUrl(QUrl::fromLocalFile(parser.value(urlOption)).toString());
+    else
+        exonicCore.setUrl(parser.value(urlOption));
+
+    exonicCore.setTitle(parser.value(appNameOption));
 
     if (parser.isSet(disableVirtualKeyboard))
-        appProperties.setVirtualKeyboard(false);
+        exonicCore.setVirtualKeyboard(false);
 
     QtWebEngine::initialize();
 
     QQmlApplicationEngine engine;
     QQmlContext * context = engine.rootContext();
-    context->setContextProperty("appProperties", &appProperties);
+    context->setContextProperty("exonicCore", &exonicCore);
 
     QRect geometry = QGuiApplication::primaryScreen()->availableGeometry();
     if (!QGuiApplication::styleHints()->showIsFullScreen()) {

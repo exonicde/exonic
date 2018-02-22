@@ -9,8 +9,7 @@
                 quit: [],
                 hup: [],
                 usr1: [],
-                usr2: [],
-                stop: []
+                usr2: []
             };
             for (let sig in this._handlers) {
                 if (!this._handlers.hasOwnProperty(sig) || !api[`sig${sig}`]) continue;
@@ -58,15 +57,15 @@
         }
     }
 
-    new QWebChannel(qt.webChannelTransport, function (channel) {
-        function debugLog(text, erase = false) {
-            let out = document.getElementById('output');
-            if (erase) 
-                out.innerText = text + "<br>";
-            else
-                out.innerText += text + "<br>";
+    function debugLog(text, erase = false) {
+        let out = document.getElementById('output');
+        if (erase) 
+            out.innerText = text + "<br>";
+        else
+            out.innerText += text + "<br>";
         }
 
+    function createExonicAPIObject(channel) {
         window.exonicAPI = {
             shell(command, returnStdOut = false, returnStdErr = false) {
                 return new Promise(resolve => {
@@ -106,5 +105,16 @@
             terminateApplication: channel.objects.exonicAPI.terminateApplication,
             signals: new UnixSignalsHandlers(channel.objects.exonicAPI)
         };
-    });
+    }
+
+    function waitForQWebChannel() {
+        if (window.hasOwnProperty('QWebChannel')) {
+            new QWebChannel(qt.webChannelTransport, createExonicAPIObject);
+        }
+        else {
+            setTimeout(waitForQWebChannel, 20);
+        }
+    }
+
+    waitForQWebChannel();
 })();
