@@ -11,6 +11,7 @@
 
 class QGuiApplication;
 class QProcess;
+class QFile;
 
 class ExonicCore : public QObject
 {
@@ -28,12 +29,23 @@ public:
     QString title() const;
     bool virtualKeyboard() const;
     Q_INVOKABLE void exonicTerminate();
+
     Q_INVOKABLE int shell(const QString &command, bool returnStdOut = false, bool returnStdErr = false);
     Q_INVOKABLE void startProcess(int processId);
     Q_INVOKABLE void terminateProcess(int processId);
     Q_INVOKABLE void killProcess(int processId);
     Q_INVOKABLE QProcess::ProcessState processState(int processId);
+
     Q_INVOKABLE void signalHandled();
+
+    Q_INVOKABLE int openFile(const QString &filename, const QString &mode);
+    Q_INVOKABLE bool closeFile(int header);
+    Q_INVOKABLE QJSValue fileRead(int header, int count = 1);
+    Q_INVOKABLE QJSValue fileReadLine(int header);
+    Q_INVOKABLE QString fileReadAll(int header);
+    Q_INVOKABLE bool fileExists(int header);
+    Q_INVOKABLE int fileWrite(int header, const QString &data);
+
     void sendSignal(int sig);
 
     static void termSignalHandler(int unused);
@@ -75,7 +87,9 @@ private:
     bool m_vitualKeyboard;
     QGuiApplication *m_application;
     QHash<int, ExoApiShellProcess *> m_processes;
+    QHash<int, QFile *> m_files;
     int m_lastProcessId;
+    int m_lastFileId;
     unsigned char m_signalHandlersStarted;
     QSocketNotifier *m_termNotifier;
     QSocketNotifier *m_intNotifier;

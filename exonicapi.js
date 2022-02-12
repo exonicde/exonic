@@ -1,6 +1,23 @@
 (function () {
     'use strict';
 
+    /**
+     * Promise.prototype.finally
+     *
+     * Pulled from https://github.com/domenic/promises-unwrapping/issues/18#issuecomment-57801572
+     * @author @stefanpenner, @matthew-andrews
+     */
+
+    (function() {
+        // in programs even if there's ever a native finally.
+        window.Promise.prototype.finally = window.Promise.prototype.finally || function (callback) {
+            let constructor = this.constructor;
+
+            return this.then(value => constructor.resolve(callback()).then(() => value))
+                .catch(reason => constructor.resolve(callback()).then(() => { throw reason; }));
+        };
+    }());
+
     class UnixSignalsHandlers {
         constructor(api) {
             this._handlers = {
@@ -57,6 +74,55 @@
         }
     }
 
+    class ExonicFile {
+        constructor(api, header) {
+            this._api = api;
+            this._header;
+        }
+
+        close() {
+            return new Promise((resolve, reject) => {
+                this._api.closeFile(this._header, result => Boolean(result) ? resolve(true) : reject(false))
+            });
+        }
+
+        read(count = 1) {
+            return new Promise((resolve, reject) => {
+                this._api.fileRead(this._header, count, result => typeof(result) === "string" ? resolve(result) : reject(result));
+            });
+        }
+
+        readLine() {
+            return new Promise((resolve, reject) => {
+                this._api.fileReadLine(this._header, result => typeof(result) === "string" ? resolve(result) : reject(result));
+            });
+        }
+
+        readAll() {
+            return new Promise((resolve, reject) => {
+                this._api.fileReadAll(this._header, result => typeof(result) === "string" ? resolve(result) : reject(result));
+            });
+        }
+
+        write(data) {
+            return new Promise((resolve, reject) => {
+                this._api.fileWrite(this._header, data, result => typeof(result) === "number" ? resolve(result) : reject(result));
+            });
+        }
+    }
+
+    class ExonicFileAPI {
+        constructor(api) {
+            this._api = api;
+        }
+
+        open(filename, mode) {
+            return new Promise((resolve, reject) => {
+                this._api.openFile(filename, mode, result => typeof(result) === 'number' ? resolve(result) : reject(result));
+            }).then(header => new ExonicFile(this._api, header));
+        }
+    }
+
     function debugLog(text, erase = false) {
         let out = document.getElementById('output');
         if (erase) 
@@ -104,7 +170,8 @@
             },
             terminateApplication: channel.objects.exonicAPI.terminateApplication,
             signals: new UnixSignalsHandlers(channel.objects.exonicAPI),
-            setTitle: channel.objects.exonicAPI.setTitle
+            setTitle: channel.objects.exonicAPI.setTitle,
+            file: new ExonicFileAPI(channel.objects.exonicAPI)
         };
     }
 

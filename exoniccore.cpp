@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <QGuiApplication>
 #include <QProcess>
+#include <QFile>
 #include <QDebug>
 
 
@@ -20,7 +21,7 @@ int ExonicCore::m_sigusr2Fd[2];
 ExonicCore::ExonicCore(QGuiApplication *application, QObject *parent) : QObject(parent)
 {
     m_application = application;
-    m_lastProcessId = -1;
+    m_lastProcessId = m_lastFileId = -1;
     m_vitualKeyboard = true;
     m_signalHandlersStarted = 0;
 
@@ -159,6 +160,122 @@ void ExonicCore::signalHandled()
     checkSignalsHandlersState();
 }
 
+int ExonicCore::openFile(const QString &filename, const QString &mode)
+{
+    qInfo() << "Opening file" << filename;
+    int imax = std::numeric_limits<int>::max();
+    if (imax == m_files.size())
+        return -1;
+
+    int nextId = m_lastFileId;
+    do {
+        if (imax > nextId)
+            ++nextId;
+        else
+            nextId = 0;
+    } while (m_files.contains(nextId));
+
+    QIODevice::OpenMode flags = 0x0;
+
+    if (!mode.contains('b'))
+        flags |= QIODevice::Text;
+
+    if (mode.contains('u'))
+        flags |= QIODevice::Unbuffered;
+
+    if (mode.contains('+')) {
+        if (mode.contains('w'))
+            flags |= QIODevice::ReadWrite | QIODevice::Truncate;
+        else if (mode.contains('a'))
+            flags |= QIODevice::ReadWrite | QIODevice::Append;
+        else if (mode.contains('r'))
+            flags |= QIODevice::ReadWrite;
+    }
+    else {
+        if (mode.contains('w'))
+            flags |= QIODevice::WriteOnly | QIODevice::Truncate;
+        else if (mode.contains('a'))
+            flags |= QIODevice::WriteOnly | QIODevice::Append;
+        else if (mode.contains('r'))
+            flags |= QIODevice::ReadOnly;
+    }
+
+    auto file = new QFile(filename, this);
+
+    if (!file->open(flags)) {
+        delete file;
+        return -1;
+    }
+
+    m_files.insert(nextId, file);
+    qInfo() << "GGG";
+
+    return nextId;
+}
+
+QString ExonicCore::fileReadAll(int header)
+{
+    qInfo() << "read all";
+    if (!m_files.contains(header))
+        return QString("");//QJSValue::NullValue;
+
+    auto file = m_files[header];
+    // ToDo: add binary format support
+//    QJSValue result(QString(file->readAll()));
+
+    return QString(file->readAll());
+}
+
+bool ExonicCore::fileExists(int header)
+{
+    if (!m_files.contains(header))
+        return false;
+    return m_files[header]->exists();
+}
+
+int ExonicCore::fileWrite(int header, const QString &data)
+{
+    qInfo() << "Before check";
+    if (!m_files.contains(header))
+        return 0;
+
+    qInfo() << "Before convert";
+    QByteArray d = data.toUtf8();
+    qInfo() << "Before write";
+    int result = static_cast<int>(m_files[header]->write(data.toUtf8()));
+    qInfo() << "Bytes written" << result;
+    return result;
+}
+
+bool ExonicCore::closeFile(int header)
+{
+    if (!m_files.contains(header))
+        return false;
+
+    auto file = m_files[header];
+    file->close();
+    m_files.remove(header);
+    delete file;
+
+    return true;
+}
+
+QJSValue ExonicCore::fileRead(int header, int count)
+{
+    if (!m_files.contains(header))
+        return QJSValue::NullValue;
+
+    return QJSValue(QString(m_files[header]->read(count)));
+}
+
+QJSValue ExonicCore::fileReadLine(int header)
+{
+    if (!m_files.contains(header))
+        return QJSValue::NullValue;
+
+    return QJSValue(QString(m_files[header]->readLine()));
+}
+
 void ExonicCore::sendSignal(int sig)
 {
     qInfo() << "sendSignal(" << sig << ")";
@@ -223,7 +340,7 @@ void ExonicCore::usr2SignalHandler(int unused)
 
 int ExonicCore::setUnixSignalHandlers()
 {
-    struct sigaction sTerm, sInt, sQuit, sHup, sUsr1, sUsr2, sStop;
+    struct sigaction sTerm, sInt, sQuit, sHup, sUsr1, sUsr2;
     sTerm.sa_handler = ExonicCore::termSignalHandler;
     sigemptyset(&sTerm.sa_mask);
     sTerm.sa_flags = 0;

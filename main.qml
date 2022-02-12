@@ -79,6 +79,35 @@ ApplicationWindow {
             exonicCore.title = title;
         }
 
+
+        function openFile(filename, mode) {
+            return exonicCore.openFile(filename, mode);
+        }
+
+        function closeFile(header) {
+            return exonicCore.closeFile(header);
+        }
+
+        function fileRead(header, count) {
+            return exonicCore.fileRead(header, count);
+        }
+
+        function fileReadLine(header) {
+            return exonicCore.fileReadLine(header);
+        }
+
+        function fileReadAll(header) {
+            return exonicCore.fileReadAll(header);
+        }
+
+        function fileExists(header) {
+            return exonicCore.fileExists(header);
+        }
+
+        function fileWrite(header, data) {
+            return exonicCore.fileWrite(header, data);
+        }
+
         signal processResolved(variant object)
         signal processRejected(variant object)
         signal sigterm()
