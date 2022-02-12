@@ -1,6 +1,6 @@
 # exonic
 
-The program provides a webview, which loads a content from a url of a file.
+The program provides a webview, which loads a content from a url or a file. Additionally the webview provides some js-extensions to allow the host system access (see [exonicapi.js](./blob/main/exonicapi.js)).
 
 ## Prerequirements
 
