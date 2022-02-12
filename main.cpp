@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
     QCommandLineOption appNameOption("application-name", app.translate("main", "Application name <name>."),
                                      app.translate("main", "application-name"), "Exonic");
     QCommandLineOption loadFromFile({"f", "from-file"}, app.translate("main", "Load application from local file."));
+    QCommandLineOption loadQML({"q", "qml"}, app.translate("main", "Load QML."));
     QCommandLineOption appManagerHost("manager-host", app.translate("main", "Applications manager host <host>., default is localhost."),
                                       app.translate("main", "manager-host"), "localhost");
     QCommandLineOption appManagerPort("manager-port", app.translate("main", "Applications manager port <port>., default is 9090."),
@@ -42,6 +43,7 @@ int main(int argc, char *argv[])
     parser.addOption(urlOption);
     parser.addOption(appNameOption);
     parser.addOption(loadFromFile);
+    parser.addOption(loadQML);
     parser.addOption(appManagerHost);
     parser.addOption(appManagerPort);
     parser.addOption(pidLocation);
@@ -109,7 +111,11 @@ int main(int argc, char *argv[])
     context->setContextProperty(QStringLiteral("initialWidth"), geometry.width());
     context->setContextProperty(QStringLiteral("initialHeight"), geometry.height());
 
-    engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
+    if (parser.isSet(loadQML))
+        engine.load(exonicCore.url());
+    else 
+        engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
+
     if (engine.rootObjects().isEmpty())
         return -1;
 
